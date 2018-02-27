@@ -37,3 +37,7 @@ Makefile*
 # QtCtreator CMake
 CMakeLists.txt.user*
 
+# Project content
+
+tests
+*.txt

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QPicture>
+#include <cstring>
 #include <QDir>
 #include <QFile>
 #include <QStringList>
@@ -10,13 +11,11 @@
 #include <QListWidget>
 #include <QDebug>
 #include <QDirIterator>
-#include <windows.h>
-#include <fstream>
-#include <iostream>
 
+bool firstStart;
 void MainWindow::loadTests()
 {
-    QDir dir("./debug/tests");
+    QDir dir("./tests");
     QStringList list = dir.entryList(QDir::Files);
     QString drctr="";
     if(list.size()==0)
@@ -24,7 +23,7 @@ void MainWindow::loadTests()
         foreach (QString s, list) {
             drctr+=" "+s;
             ui->questionTextLabel->setText(drctr);
-            QFile f("./debug/tests/"+s);
+            QFile f("./tests/"+s);
                 if (!f.open(QFile::ReadOnly | QFile::Text)) break;
             QTextStream in(&f);
             QString stringTest=in.readAll();
@@ -44,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->pictureLabel->setVisible(false);
     //Preparations, hiding testing elements
     for(int i=0;i<6;i++)
     {
@@ -56,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->nextButton->setVisible(false);
     loadTests();
     swapMenusToTest(false);
+    setFIOvisible(false);
 }
 
 MainWindow::~MainWindow()
@@ -110,7 +111,7 @@ int MainWindow::checkQuestion(Question question)
 }
 void MainWindow::swapMenusToTest(bool choise)
 {
-    ui->pictureLabel->setVisible(choise);
+  //  ui->pictureLabel->setVisible(choise);
     ui->testNameLabel->setVisible(choise);
     ui->nextButton->setVisible(choise);
     ui->testProgressBar->setVisible(choise);
@@ -130,28 +131,32 @@ void MainWindow::showTestResults()
    // ui->questionTextLabel->setVisible(true);
     double result = 1.0*rights/activeTest.questions.size()*100;
     ui->resultsLabel->setVisible(true);
-    QString name=trUtf8("Алло");
-    QString results=QString(QString("Previous results:\n")+QString("Test: \"")+activeTest.testName+"\"\n"+QString("Student: ")+FIO+"\n" + QString("Score: ")+QString::number(rights)+"/"+QString::number(activeTest.questions.size())+" | "+QString::number(result)+"%");
+    QString results=QString(QString("Предыдущие результаты:\n")+QString("Название теста: \"")+activeTest.testName+"\"\n"+QString("Студент: ")+FIO+"\n" + QString("Результат теста: ")+QString::number(rights)+"/"+QString::number(activeTest.questions.size())+" | "+QString::number(result)+"%");
     ui->resultsLabel->setText(results);
 }
 
 
 
+void MainWindow::setFIOvisible(bool val)
+{
+   if(val)
+   {
+        ui->studNameField->clear();
+   }
+   ui->studNameField->setVisible(val);
+   ui->studNameLabel->setVisible(val);
 
+}
 
 
 void MainWindow::on_startButton_clicked()
 {
 
-
-    if(ui->testsListWidget->currentItem()==0)
-    {
-
-    }
-    else
+    firstStart=true;
+    if(ui->testsListWidget->currentItem()!=0)
     {
        // ui->resultsLabel->clear();
-         ui->resultsLabel->setVisible(false);
+        ui->resultsLabel->setVisible(false);
         if(tests.size()==0)
         {
             ui->questionTextLabel->setText("Sizeerror");
@@ -162,10 +167,9 @@ void MainWindow::on_startButton_clicked()
             activeTest=tests[index];
         }
 
-        swapMenusToTest(true);
+        ui->startButton->setVisible(false);
+        ui->testsListWidget->setVisible(false);
         ui->testNameLabel->setText(activeTest.testName);
-       // int qCount = activeTest.questions.size();
-        //int qRightCount = 0;
         rights=0;
         ui->testProgressBar->setMaximum(activeTest.questions.size());
         ui->testProgressBar->setValue(activeTest.currentQuestion+1);
@@ -175,26 +179,36 @@ void MainWindow::on_startButton_clicked()
         {
             ui->questionTextLabel->setText("noQuestions");
         }
-
-        loadQuestion(activeTest.questions[0]);
+        setFIOvisible(true);
         ui->nextButton->setVisible(true);
     }
 }
 
 void MainWindow::on_nextButton_clicked()
 {
-    if(checkQuestion(activeTest.questions[activeTest.currentQuestion])==0)
+    if(firstStart)
     {
-            rights++;
-    }
-    if(activeTest.nextQuestion())
-    {
-        showTestResults();
+        FIO=ui->studNameField->text();
+        firstStart=false;
+        setFIOvisible(false);
+        swapMenusToTest(true);
+        loadQuestion(activeTest.questions[0]);
     }
     else
     {
-        ui->testProgressBar->setValue(activeTest.currentQuestion+1);
-        loadQuestion(activeTest.questions[activeTest.currentQuestion]);
+        if(checkQuestion(activeTest.questions[activeTest.currentQuestion])==0)
+        {
+                rights++;
+        }
+        if(activeTest.nextQuestion())
+        {
+            showTestResults();
+        }
+        else
+        {
+            ui->testProgressBar->setValue(activeTest.currentQuestion+1);
+            loadQuestion(activeTest.questions[activeTest.currentQuestion]);
+        }
     }
 }
 

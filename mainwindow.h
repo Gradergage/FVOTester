@@ -24,6 +24,7 @@ public:
     void loadTests();
     bool startTest(Test test);
     void loadQuestion(Question question);
+    void setFIOvisible(bool val);
     int checkQuestion(Question question);
     void showTestResults();
 private slots:
